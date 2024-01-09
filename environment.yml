@@ -1,0 +1,11 @@
+name: hackathon
+channels:
+  - defaults
+dependencies:
+  - python=3.8.5
+  - ipykernel
+  - numpy
+  - pandas
+  - matplotlib
+  - pip
+  - pip:
