@@ -19,127 +19,159 @@ The hackathon served as a means of testing ourselves and understanding how to pe
 The journey of Vocalize does not end here. Far from it, in fact, as this is just the beginning. The proposed application has the potential of allowing an extremely easy form of communication for people affected with hearing loss of all depths. Upon increasing the number of signs for detection and also enhancing the compatibility and accuracy of the model with the flutter application, the presented prototype has the ability of finally providing a voice to everyone. 
 
 
-#include<iostream>
+#
+#include <iostream>
+#include <vector>
+
 using namespace std;
 
-#define PLAYER1 'X'
-#define PLAYER2 'O'
-#define EMPTY ' '
+// Function declarations
+void board_state(const vector<int>& board);
+void player(vector<int>& board);
+int minmax(vector<int>& board, int player);
+void computer_turn(vector<int>& board);
+int win(const vector<int>& board);
+bool is_draw(const vector<int>& board);
 
-char board[3][3];
+// Function to draw the board's current state every time the user's turn arrives
+void board_state(const vector<int>& board) {
+    cout << "Current State Of Board : \n\n";
+    for (int i = 0; i < 9; ++i) {
+        if (i > 0 && i % 3 == 0)
+            cout << "\n";
+        
+        if (board[i] == 0)
+            cout << "- ";
+        else if (board[i] == 1)
+            cout << "O ";
+        else if (board[i] == -1)
+            cout << "X ";
+    }
+    cout << "\n\n";
+}
 
-//initializing the board
-void initializing(){
-    for(int i=0; i<3; i++){
-        for(int j = 0; j<3; j++){
-            board[i][j] = EMPTY;
+// Function to take the user's move as input and make the required changes on the board
+void player(vector<int>& board) {
+    cout << "Enter X's position from [1...9]: ";
+    int pos;
+    cin >> pos;
+    if (board[pos - 1] != 0) {
+        cout << "Wrong Move!!!";
+        exit(0);
+    }
+    board[pos - 1] = -1;
+}
+
+// MinMax function
+int minmax(vector<int>& board, int player) {
+    // Check for terminal states (win or draw)
+    int x = win(board);
+    if (x != 0)
+        return x * player;
+
+    int pos = -1;
+    int value = -2;
+    // Iterate over the board to find the best move
+    for (int i = 0; i < 9; ++i) {
+        if (board[i] == 0) {
+            board[i] = player; // Simulate placing a piece
+            int score = -minmax(board, player * -1); // Recursively call minmax for the opponent
+            if (score > value) {
+                value = score;
+                pos = i;
+            }
+            board[i] = 0; // Undo the move for backtracking
         }
     }
+
+    if (pos == -1)
+        return 0;
+    return value;
 }
 
-
-//displaying the board
-void display(){
-    printf("-------------\n");
-    for(int i=0; i<3; i++){
-        printf("| %c | %c | %c |\n", board[i][0], board[i][1], board[i][2]);
-        printf("-------------\n");
-    }
-}
-
-bool isBoardFull(){
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            if (board[i][j] == EMPTY) {
-                return 0;
+// Function to make the computer's move using the MinMax algorithm
+void computer_turn(vector<int>& board) {
+    int pos = -1;
+    int value = -2;
+    // Iterate over the board to find the best move for the computer
+    for (int i = 0; i < 9; ++i) {
+        if (board[i] == 0) {
+            board[i] = 1; // Simulate placing the computer's piece
+            int score = -minmax(board, -1); // Call MinMax for the opponent (human player)
+            board[i] = 0; // Undo the move
+            if (score > value) {
+                value = score;
+                pos = i;
             }
         }
     }
-    return 1;
+
+    board[pos] = 1; // Place the computer's piece on the board
 }
 
-void getPlayer1Move() {
-    int row, col;
-    do {
-        printf("Enter your move (row column): ");
-        scanf("%d %d", &row, &col);
-    } while (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != EMPTY);
+// Function to analyze the game for a win
+int win(const vector<int>& board) {
+    // Array representing winning combinations
+    int cb[8][3] = {
+        {0, 1, 2},
+        {3, 4, 5},
+        {6, 7, 8},
+        {0, 3, 6},
+        {1, 4, 7},
+        {2, 5, 8},
+        {0, 4, 8},
+        {2, 4, 6}
+    };
 
-    board[row][col] = PLAYER1;
-}
-
-void getPlayer2Move() {
-    int row, col;
-    do {
-        printf("Enter your move (row column): ");
-        scanf("%d %d", &row, &col);
-    } while (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != EMPTY);
-
-    board[row][col] = PLAYER2;
-}
-
-bool hasPlayerWon(char player) {
-    // Check rows
-    for (int i = 0; i < 3; i++) {
-        if (board[i][0] == player && board[i][1] == player && board[i][2] == player) {
-            return 1;
-        }
+    // Check each winning combination
+    for (int i = 0; i < 8; ++i) {
+        if (board[cb[i][0]] != 0 &&
+            board[cb[i][0]] == board[cb[i][1]] &&
+            board[cb[i][0]] == board[cb[i][2]])
+            return board[cb[i][2]]; // Return the player who wins
     }
-
-    // Check columns
-    for (int j = 0; j < 3; j++) {
-        if (board[0][j] == player && board[1][j] == player && board[2][j] == player) {
-            return 1;
-        }
-    }
-
-    // Check diagonals
-    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
-        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
-        return 1;
-    }
-
-    return 0;
+    return 0; // Return 0 if no winner
 }
 
-void playGame(){
-
-    initializing();
-    display();
-
-    while(!isBoardFull()){
-
-        cout<<"Player 1 (X): "<<endl;
-        getPlayer1Move();
-        display();
-
-        if(hasPlayerWon(PLAYER1)){
-            cout<<"Congratulations Player 1 has won!"<<endl;
-            break;
-        }
-
-
-        if (isBoardFull()) {
-            printf("It's a tie!\n");
-            return;
-        }
-
-        cout<<"Player 2 (O): "<<endl;
-        getPlayer2Move();
-        display();
-
-        
-        if(hasPlayerWon(PLAYER2)){
-            cout<<"Congratulations Player 2 has won!"<<endl;
-            break;
-        }
-        
+// Function to check for a draw
+bool is_draw(const vector<int>& board) {
+    // If there are no more empty positions, the game is a draw
+    for (int i = 0; i < 9; ++i) {
+        if (board[i] == 0)
+            return false; // Game is not a draw
     }
-
+    return true; // Game is a draw
 }
 
+// Main function
 int main() {
-    playGame();
+    cout << "=======TIC TAC TOE GAME - AI======\n";
+    
+    // Initialize the board
+    vector<int> board(9, 0);
+    cout << "You (X) go first.\n";
+    player(board); // Human player's turn
 
-    return 0;
+    // Game loop
+    for (int i = 1; i <= 9; ++i) {
+        if (win(board) != 0) {
+            // Check if there is a winner
+            board_state(board); // Display the final board state
+            cout << (win(board) == -1 ? "X Wins!    O Loose !" : "X Loose!   O Wins !") << "\n";
+            break;
+        }
+        if (is_draw(board)) {
+            // Check if the game is a draw
+            cout << "Draw!\n";
+            break;
+        }
+        if (i % 2 == 1)
+            computer_turn(board); // Computer's turn
+        else {
+            board_state(board); // Display the board
+            player(board); // Human player's turn
+        }
+    }
+
+    return 0; // End of the program
 }
